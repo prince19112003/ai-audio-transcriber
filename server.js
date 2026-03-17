@@ -66,13 +66,20 @@ app.post('/api/transcribe', upload.single('audio'), async (req, res) => {
       file: fs.createReadStream(filePath),
       model: 'whisper-large-v3', // Groq's high-accuracy whisper model
       language: 'hi', // Specifically instruct the model to focus on Hindi
+      response_format: 'verbose_json', // Request segments to detect pauses
     });
 
     // Clean up temporary file
     fs.unlinkSync(filePath);
 
-    // Send successful response
-    res.json({ text: transcription.text });
+    // Format text with new lines based on audio segments
+    let formattedText = transcription.text;
+    if (transcription.segments && transcription.segments.length > 0) {
+        formattedText = transcription.segments.map(segment => segment.text.trim()).join('\n\n');
+    }
+
+    // Send successful response with formatted text
+    res.json({ text: formattedText });
 
   } catch (error) {
     console.error('Transcription error:', error.message || error);
