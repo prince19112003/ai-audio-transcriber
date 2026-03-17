@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Audio Transcriber</title>
+    
+    <!-- Tailwind CSS (via CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome (via CDN) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="antialiased min-h-screen flex flex-col items-center justify-center p-4 selection:bg-indigo-200">
+
+    <div class="w-full max-w-2xl bg-white rounded-2xl shadow-xl overflow-hidden">
+        <!-- Header -->
+        <header class="bg-indigo-600 text-white p-6 text-center">
+            <h1 class="text-2xl font-bold mb-2"><i class="fa-solid fa-microphone-lines mr-2"></i> AI Audio Transcriber</h1>
+            <p class="text-indigo-100 text-sm">High Accuracy transcription powered by Groq Whisper</p>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="p-6 md:p-8">
+            <!-- Tabs -->
+            <div class="flex border-b border-gray-200 mb-6 relative">
+                <button id="tab-record" class="flex-1 py-3 font-medium text-sm md:text-base text-indigo-600 border-b-2 border-indigo-600 focus:outline-none transition-colors duration-200">
+                    <i class="fa-solid fa-microphone mr-2"></i> Live Record
+                </button>
+                <button id="tab-upload" class="flex-1 py-3 font-medium text-sm md:text-base text-gray-500 border-b-2 border-transparent hover:text-gray-700 hover:border-gray-300 focus:outline-none transition-colors duration-200">
+                    <i class="fa-solid fa-cloud-arrow-up mr-2"></i> Upload File
+                </button>
+            </div>
+
+            <!-- Live Record Section -->
+            <section id="section-record" class="flex flex-col items-center justify-center py-8 min-h-[250px] transition-opacity duration-300">
+                <div class="text-center mb-6">
+                    <p class="text-gray-600 mb-2">Click the microphone to start recording</p>
+                    <div id="recording-timer" class="text-3xl font-mono font-bold text-gray-800 opacity-0 transition-opacity duration-300">
+                        00:00
+                    </div>
+                </div>
+
+                <div class="relative flex items-center justify-center">
+                    <button id="btn-record" class="w-20 h-20 rounded-full bg-indigo-600 text-white flex items-center justify-center text-3xl shadow-lg hover:bg-indigo-700 transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-indigo-300 relative z-10" aria-label="Start Recording">
+                        <i id="icon-record" class="fa-solid fa-microphone"></i>
+                    </button>
+                    <!-- Background pulsing circle (handled by css class) -->
+                </div>
+                
+                <p id="record-status-text" class="mt-6 text-sm text-gray-500 font-medium">Ready</p>
+            </section>
+
+            <!-- Upload File Section (Hidden by default) -->
+            <section id="section-upload" class="hidden flex-col items-center justify-center py-8 min-h-[250px]">
+                <div id="drop-zone" class="w-full drop-zone rounded-xl flex flex-col items-center justify-center p-8 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors duration-200 relative">
+                    <input type="file" id="file-input" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="audio/mp3, audio/wav, audio/m4a, audio/webm, audio/ogg">
+                    
+                    <i class="fa-solid fa-cloud-arrow-up text-5xl text-gray-400 mb-4"></i>
+                    <p class="text-gray-800 font-medium text-lg mb-1">Drag and drop audio file</p>
+                    <p class="text-gray-500 text-sm mb-4">or click to browse</p>
+                    <div class="bg-indigo-100 text-indigo-700 text-xs px-3 py-1 rounded-full font-medium">
+                        Max file size: 25MB (mp3, wav, m4a)
+                    </div>
+                </div>
+                <div id="file-details" class="hidden w-full mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-between">
+                    <div class="flex items-center">
+                        <i class="fa-solid fa-file-audio text-indigo-500 text-xl mr-3"></i>
+                        <span id="file-name" class="text-sm font-medium text-gray-800 truncate max-w-[200px] md:max-w-xs">filename.mp3</span>
+                    </div>
+                    <button id="btn-remove-file" class="text-gray-400 hover:text-red-500 focus:outline-none p-1">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <button id="btn-upload-submit" class="hidden mt-6 w-full py-3 px-4 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors shadow focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                    <i class="fa-solid fa-wand-magic-sparkles mr-2"></i> Transcribe Audio
+                </button>
+            </section>
+
+            <!-- Loading State -->
+            <div id="loading-state" class="hidden flex-col items-center justify-center py-10">
+                <div class="spinner mb-4"></div>
+                <p class="text-indigo-600 font-medium animate-pulse">Transcribing with AI...</p>
+                <p class="text-gray-400 text-xs mt-2">This may take a few moments depending on audio length.</p>
+            </div>
+
+            <!-- Result Area -->
+            <section id="section-result" class="hidden mt-8 border-t border-gray-100 pt-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                    <i class="fa-solid fa-file-lines text-indigo-500 mr-2"></i> Transcription Result
+                </h3>
+                <div class="relative">
+                    <textarea id="transcription-text" class="w-full h-48 p-4 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow" readonly placeholder="Transcription will appear here..."></textarea>
+                </div>
+                
+                <div class="flex flex-col sm:flex-row gap-3 mt-4">
+                    <button id="btn-copy" class="flex-1 py-2 px-4 bg-white border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-200 flex items-center justify-center">
+                        <i class="fa-solid fa-copy mr-2"></i> Copy to Clipboard
+                    </button>
+                    <button id="btn-download" class="flex-1 py-2 px-4 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-lg font-medium hover:bg-indigo-100 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-200 flex items-center justify-center">
+                        <i class="fa-solid fa-download mr-2"></i> Download as .txt
+                    </button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Main Logic -->
+    <script src="script.js"></script>
+</body>
+</html>
