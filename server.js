@@ -15,7 +15,7 @@ const port = process.env.PORT || 3000;
 
 // Initialize Groq client
 const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
+  apiKey: process.env.GROQ_API_KEY || "missing_key_fallback",
 });
 
 // Middleware
@@ -92,3 +92,5 @@ app.post('/api/transcribe', upload.single('audio'), async (req, res) => {
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
+
+module.exports = app;
