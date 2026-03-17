@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 const { Groq } = require('groq-sdk');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const { v4: uuidv4 } = require('uuid');
 
 // Load environment variables
@@ -28,11 +29,8 @@ app.use(express.json());
 // so it's often easier to save temporarily to disk and then read it.
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadDir = path.join(__dirname, 'uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir);
-    }
-    cb(null, 'uploads/');
+    // Use the /tmp directory for Vercel compatibility
+    cb(null, os.tmpdir());
   },
   filename: function (req, file, cb) {
     // Generate a unique filename with proper extension
